@@ -64,7 +64,7 @@ This repository contains the source code of LV-CIT, a black-box testing method t
 
 ## Experiment Setup
 
-LV-CIT is implemented in Python (version 3.8). The code is developed and tested under a Windows platform (Windows 11 23H2 Version 22631.3880), on a computer equipped with an AMD Ryzen 7 5800X 8-core CPU@3.8GHz, a 32GB RAM, and an NVIDIA GeForce RTX 4060Ti GPU with 8GB VRAM. The cuda and cudnn versions are 11.7 and 8.9.6, respectively.
+LV-CIT is implemented in Python (version 3.8). The code is developed and tested under a Windows platform (Windows 11 23H2 Version 22631.3880), on a computer equipped with an AMD Ryzen 7 5800X 8-core CPU\@3.8GHz, a 32GB RAM, and an NVIDIA GeForce RTX 4060Ti GPU with 8GB VRAM. The cuda and cudnn versions are 11.7 and 8.9.6, respectively.
 The following steps are required to set up the environment and run the experiments:
 
 1. Run the following command to install dependency packages (in the root directory of this repository):
