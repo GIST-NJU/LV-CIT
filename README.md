@@ -64,7 +64,7 @@ This repository contains the source code of LV-CIT, a black-box testing method t
 
 ## Experiment Setup
 
-LV-CIT is implemented in Python (version 3.8). The code is developed and tested under a Windows platform (Windows 11 23H2 Version 22631.3880), on a computer equipped with an AMD Ryzen 7 5800X 8-core CPU@3.8GHz, a 32GB RAM, and an NVIDIA GeForce RTX 4060Ti GPU with 8GB VRAM.The cuda and cudnn versions are 11.7 and 8.9.6, respectively.
+LV-CIT is implemented in Python (version 3.8). The code is developed and tested under a Windows platform (Windows 11 23H2 Version 22631.3880), on a computer equipped with an AMD Ryzen 7 5800X 8-core CPU@3.8GHz, a 32GB RAM, and an NVIDIA GeForce RTX 4060Ti GPU with 8GB VRAM. The cuda and cudnn versions are 11.7 and 8.9.6, respectively.
 The following steps are required to set up the environment and run the experiments:
 
 1. Run the following command to install dependency packages (in the root directory of this repository):
@@ -76,7 +76,7 @@ pip install -r requirements.txt
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
 
-2. Download the checkpoints of the DNN models under test, and put them in the `checkpoints/<model_name>/` directory where `<model_name>` is `msrn`, `mlgcn`, or `asl`.
+2. Download the checkpoints of the DNN models under test, and put them in the `checkpoints/<model_name>/` directory where `<model_name>` is `msrn`, `mlgcn`, or `asl`, and rename them to `<dataset>_checkpoints.pth.tar` where `<dataset>` is `voc` or `coco` (See more details in [checkpoints](./checkpoints/)). Download [ResNet-101 pretrained model](https://github.com/chehao2628/MSRN?tab=readme-ov-file#2-download-resnet-101-pretrained-model) for MSRN, renamed the model to `resnet101_for_msrn.pth.tar` and put it in the `checkpoints/msrn/` directory.
 
 | DNN Models | Dataset |
 | :---: | :---: |
@@ -84,7 +84,6 @@ conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cud
 | [ML-GCN](https://github.com/megvii-research/ML-GCN) | VOC, COCO |
 | [ASL](https://github.com/Alibaba-MIIL/ASL) | VOC, COCO |
 
-Download [ResNet-101 pretrained model](https://github.com/chehao2628/MSRN?tab=readme-ov-file#2-download-resnet-101-pretrained-model) for MSRN, renamed the model to `resnet101_for_msrn.pth.tar` and put it in the `checkpoints/msrn/` directory.
 
 3. Download the [VOC2007](http://host.robots.ox.ac.uk/pascal/VOC/voc2007/) and [COCO2014](https://cocodataset.org) datasets and put them in the `data/<dataset>/tmp` directory, where `<dataset>` is `voc` or `coco/coco` (or you can just run `python default_main.py` in [step 4](#4-execute-tests) and the datasets will be download automatly).
 
@@ -98,7 +97,7 @@ Our tool consists of three main components: label value coverage array generatio
 
 #### 1. Generate Label Value Covering Arrays
 
-Run the following code to generate a label value covering array (for $n=6, k=3 and t=2$ where $n$ indicates the size of label space, $k$ indicates the counting constraint value, and $t$ indicates the covering strength). The covering array will be saved in `data/lvcit/1covering_array/adaptive_random/`.
+Run the following code to generate a label value covering array (for $n=6$, $k=3$ and $t=2$ where $n$ indicates the size of label space, $k$ indicates the counting constraint value, and $t$ indicates the covering strength). The covering array will be saved in `data/lvcit/1covering_array/adaptive_random/`.
 
 ```bash
 python ca_generator.py --all=False -m "adaptive random" -n 6 -k 3 -t 2
@@ -152,7 +151,7 @@ Then please save the results to `data/lvcit/1covering_array/acts/` and copy the 
 
 First, get the matting images by the following steps:
 1. get the codes and pretrained models for [Yolact++](https://github.com/dbolya/yolact) and replace `eval.py` with `yolact/eval.py` we provided.
-2. run the following code to split source images into different dictionaries by labels, and save them in `data/lvcit/0source_img/<dataset>/<label>/`:
+2. run the following code to split source images into different dictionaries by labels, and save them in `data/lvcit/0source_img/<dataset>/`, where `<dataset>` is `VOC` or `COCO`:
 
 ```bash
 python img_classify2dir.py
@@ -161,7 +160,7 @@ python img_classify2dir.py
 3. run the following code to generate matting images (see [YOLACT++](https://github.com/dbolya/yolact) for more details), and save these images in `data/lvcit/2matting_img/<dataset>_output/`, where `<dataset>` is `VOC` or `COCO`.
 
 ```bash
-python eval.py --trained_model=weights/yolact_plus_base_54_800000.pth --score_threshold=0.15 --top_k=15 --display_masks=False --display_text=False --display_bboxes=False --display_scores=False --images=<path_to_source_dir>:<path_to_resutls_dir>
+python eval.py --trained_model=weights/yolact_plus_base_54_800000.pth --score_threshold=0.15 --top_k=15 --display_masks=False --display_text=False --display_bboxes=False --display_scores=False --images=data/lvcit/0source_img/<dataset>:data/lvcit/2matting_img/<dataset>_output
 ```
 
 Next, sample by DNN models and human:
