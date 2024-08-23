@@ -11,8 +11,8 @@ import pandas as pd
 from PIL import Image
 import tqdm
 
-from combine_main import model_info
-from combine_runner import get_model, create_engine
+from lvcit_main import model_info
+from lvcit_runner import get_model, create_engine
 from models import asl_validate_multi
 
 
@@ -63,6 +63,7 @@ object_categories = {
         ]
     ]
 }
+matting_img_root = os.path.join("data", "lvcit", "2matting_img")
 
 
 class ObjectLibrary(data.Dataset):
@@ -132,7 +133,9 @@ class ObjectLibrary2(ObjectLibrary):
         return img_name, img, target
 
 
-def check():
+def check(datasets=None):
+    if datasets is None:
+        datasets = ["voc", "coco"]
     model_info_index = {
         "voc": [0, 1, 2],
         "coco": [0, 1, 2],
@@ -153,30 +156,30 @@ def check():
             "workers": 1,
             "model_type": "tresnet_l",
             "print_freq": 64,
-            "model_path": os.path.join("checkpoints", "org", "asl", "coco_checkpoint.pth"),
+            "model_path": os.path.join("checkpoints", "asl", "coco_checkpoint.pth"),
             "batch_size": 16,
         },
     }
-    for dataname in ["voc", "coco"]:
+    for dataset in datasets:
         res_df = pd.DataFrame()
-        for idx in model_info_index[dataname]:
+        for idx in model_info_index[dataset]:
             print(model_info[idx]["model_name"])
             info = {
                 **model_info[idx],
-                "resume": glob.glob(os.path.join("checkpoints", "org", model_info[idx]["model_name"], f"{dataname}_checkpoint.*"))[0],
-                "data_name": dataname,
-                "num_classes": num_classes[dataname],
-                "graph_file": os.path.join("data", dataname, f"{dataname}_adj.pkl"),
+                "resume": glob.glob(os.path.join("checkpoints", model_info[idx]["model_name"], f"{dataset}_checkpoint.*"))[0],
+                "data_name": dataset,
+                "num_classes": num_classes[dataset],
+                "graph_file": os.path.join("data", dataset, f"{dataset}_adj.pkl"),
                 "use_gpu": torch.cuda.is_available(),
-                **(special_info[f"{dataname}_{model_info[idx]['model_name']}"] if f"{dataname}_{model_info[idx]['model_name']}" in special_info else {}),
+                **(special_info[f"{dataset}_{model_info[idx]['model_name']}"] if f"{dataset}_{model_info[idx]['model_name']}" in special_info else {}),
             }
             args = argparse.Namespace(**info)
             model_class = get_model(args.model_name)
             if args.model_name in ['msrn', 'mlgcn']:
                 lib_dataset = ObjectLibrary(
-                    os.path.join("data", "combine", "2matting_img", "testset", f"{dataname.upper()}_output"),
-                    dataname,
-                    inp_name=os.path.join("data", dataname, f"{dataname}_glove_word2vec.pkl")
+                    os.path.join(matting_img_root, f"{dataset.upper()}_output"),
+                    dataset,
+                    inp_name=os.path.join("data", dataset, f"{dataset}_glove_word2vec.pkl")
                 )
                 model, criterion, optimizer, engine = create_engine(model_class, args)
                 engine.predict(model, criterion, lib_dataset, optimizer)
@@ -200,9 +203,9 @@ def check():
                 validate = asl_validate_multi
                 model = model_class(args)
                 lib_dataset = ObjectLibrary2(
-                    os.path.join("data", "combine", "2matting_img", "testset", f"{dataname.upper()}_output"),
-                    dataname,
-                    inp_name=os.path.join("data", dataname, f"{dataname}_glove_word2vec.pkl"),
+                    os.path.join(matting_img_root, f"{dataset.upper()}_output"),
+                    dataset,
+                    inp_name=os.path.join("data", dataset, f"{dataset}_glove_word2vec.pkl"),
                     transform=transform,
                 )
                 lib_loader = torch.utils.data.DataLoader(
@@ -229,20 +232,18 @@ def check():
             else:
                 res_df = pd.merge(res_df, result[[args.model_name, "tmp_key"]], on="tmp_key")
         res_df.drop(columns=["tmp_key"], inplace=True)
-        # res_df["level"] = res_df[res_df.columns.difference(["filename", "target"])].apply(
-        #     lambda x: 0 if sum(x) == len(model_info_index[dataname]) else 1,
-        #     axis=1
-        # )
         print(res_df)
         res_df.to_csv(os.path.join(
-            "data", "combine", "2matting_img", "testset", f"{dataname.upper()}_output", "object_detect.csv"
+            matting_img_root, f"{dataset.upper()}_output", "object_detect.csv"
         ), index=False)
 
 
-def model_select():
-    for dataname in ["voc", "coco"]:
-        src_dir = os.path.join("data", "combine", "2matting_img", "testset", f"{dataname.upper()}_output")
-        dst_dir = os.path.join("data", "combine", "2matting_img", "testset", f"{dataname.upper()}_output_model_any_pass")
+def model_select(datasets=None):
+    if datasets is None:
+        datasets = ["voc", "coco"]
+    for dataset in datasets:
+        src_dir = os.path.join(matting_img_root, f"{dataset.upper()}_output")
+        dst_dir = os.path.join(matting_img_root, f"{dataset.upper()}_output_model_pass")
         res_file = os.path.join(src_dir, "object_detect.csv")
         res_df = pd.read_csv(res_file)
         if not os.path.exists(dst_dir):
@@ -253,7 +254,7 @@ def model_select():
         # select images that at least one model pass
         res_df["success"] = res_df.apply(lambda x: any(x[2:]), axis=1)
         res_df = res_df[res_df["success"]]
-        tqdm.tqdm.pandas(desc=f"Copying files of {dataname}...")
+        tqdm.tqdm.pandas(desc=f"Copying files of {dataset}...")
         res_df.progress_apply(
             lambda x: shutil.copy(
                 os.path.join(src_dir, x["target"], x["filename"]),
@@ -264,5 +265,17 @@ def model_select():
 
 
 if __name__ == "__main__":
-    check()
-    model_select()
+    parser = argparse.ArgumentParser(description="Check object library by DNN")
+    parser.add_argument(
+        "--dataset", "-d",
+        type=str,
+        help="select dataset, default both voc and coco"
+    )
+    args = parser.parse_args()
+
+    if args.dataset is None:
+        check()
+        model_select()
+    else:
+        check([args.dataset])
+        model_select([args.dataset])

@@ -8,10 +8,11 @@ import pandas as pd
 from pandas import DataFrame
 from itertools import combinations
 from scipy.special import comb
-import copy
+import argparse
+from util import str2bool
 
 
-output_dir = os.path.join("data", "combine", "1covering_array")
+output_dir = os.path.join("data", "lvcit", "1covering_array")
 np.random.seed(int(time.time()))
 random.seed(int(time.time()))
 
@@ -290,13 +291,30 @@ if __name__ == '__main__':
     pd.set_option('display.max_columns', None)
     pd.set_option('display.max_rows', None)
     pd.set_option('max_colwidth', 1000)
-    for n in [20, 80]:
-        for k in range(2, 7):
-            for _ in range(5):
-                tau = 2
-                task(n, k, tau, "baseline")
-    for n in [20, 80]:
-        for k in range(2, 7):
-            for _ in range(5):
-                tau = 2
-                task(n, k, tau, "adaptive random")
+
+    parser = argparse.ArgumentParser(description="Generate covering array")
+    parser.add_argument(
+        "--method", "-m",
+        type=str, default="adaptive random",
+        help="method to generate covering array, baseline or adaptive random"
+    )
+    parser.add_argument("--all", "-a", type=str2bool, default=True, help="generate covering arrays for all")
+    parser.add_argument("-n", type=int, default=20, help="number of labels (size of label space)")
+    parser.add_argument("-k", type=int, default=4, help="the counting constraint value, default 4")
+    parser.add_argument("-t", type=int, default=2, help="covering strength, default 2")
+    parser.add_argument("--number", type=int, default=1, help="how many covering arrays to generate")
+    args = parser.parse_args()
+    if args.all:
+        for n in [20, 80]:
+            for k in range(2, 7):
+                for _ in range(5):
+                    tau = 2
+                    task(n, k, tau, "baseline")
+        for n in [20, 80]:
+            for k in range(2, 7):
+                for _ in range(5):
+                    tau = 2
+                    task(n, k, tau, "adaptive random")
+    else:
+        for _ in range(args.number):
+            task(args.n, args.k, args.t, args.method)

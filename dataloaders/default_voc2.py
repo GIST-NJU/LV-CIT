@@ -63,7 +63,7 @@ def read_object_labels(root, dataset, set):
 def write_object_labels_csv(file, labeled_data):
     # write a csv file
     print('[dataset] write file %s' % file)
-    with open(file, 'w') as csvfile:
+    with open(file, 'w', newline='') as csvfile:
         fieldnames = ['name']
         fieldnames.extend(object_categories)
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)

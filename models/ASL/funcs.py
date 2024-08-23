@@ -107,12 +107,14 @@ def asl_validate_multi(val_loader, model, args, res_type=0):
             for item in cat_id:
                 temp_cat.append(item)
             for i in range(len(name)):
-                temp = []
-                temp.append(name[i].split(os.sep)[-1])
+                labels = []
+                labels_gt = []
                 for j in range(args.num_classes):
                     if output[i][j] > args.threshold:
-                        temp.append(temp_cat[j])
-                result.append(temp)
+                        labels.append(temp_cat[j])
+                    if target[i][j] > 0:
+                        labels_gt.append(temp_cat[j])
+                result.append([name[i].split(os.sep)[-1], "|".join(labels), "|".join(labels_gt)])
         else:
             cat_id = val_loader.dataset.get_cat2id()
             id_cat = list(cat_id.keys())
@@ -142,8 +144,8 @@ def asl_validate_multi(val_loader, model, args, res_type=0):
 
     if res_type == 0:
         result = pd.DataFrame(result)
-        result.rename(columns={0: "img"}, inplace=True)
-        return result, mAP_score, torch.cat(targets).numpy()
+        result.rename(columns={0: "filename", 1: "labels", 2: "labels_gt"}, inplace=True)
+        return result, mAP_score
     else:
         result = pd.DataFrame(result)
         result = result[["filename"] + list(sorted(val_loader.dataset.get_cat2id().keys())) + ["labels_gt", "labels", "pass"]]

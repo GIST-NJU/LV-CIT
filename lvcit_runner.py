@@ -10,6 +10,10 @@ import torch.utils.data
 import torchvision.transforms as transforms
 
 from models import *
+from util import cal_score
+
+
+DO_COMPONENTS = False
 
 
 def get_model(model_name):
@@ -26,17 +30,16 @@ def create_engine(model_class, args):
         'batch_size': args.batch_size,
         'image_size': args.image_size,
         'max_epochs': args.epochs,
-        'evaluate': True,
+        'evaluate': args.evaluate,
         'resume': args.resume,
         'num_classes': args.num_classes,
         'difficult_examples': True,
         'save_model_path': os.path.join(args.save_model_path, args.model_name, args.data_name),
         'workers': args.workers,
         'epoch_step': args.epoch_step,
-        'lr': args.lr
+        'lr': args.lr,
+        'lrp': args.lrp if args.__contains__("lrp") else 1,
     }
-    if args.model_name == 'dsdl':
-        state["device_ids"] = args.device_ids
 
     # create model
     if args.model_name == 'msrn':
@@ -84,25 +87,34 @@ def runner1(dataloader_class, model_class, args):
     model, criterion, optimizer, engine = create_engine(model_class, args)
     engine.predict(model, criterion, val_dataset, optimizer)
 
-    temp_cat = []
+    pb = torch.sigmoid(engine.state['ap_meter'].scores)
     cat_id = val_dataset.get_cat2id()
-    for item in cat_id:
-        temp_cat.append(item)
-    _, indec = torch.sort(engine.state['ap_meter'].scores, descending=True)
-    pb = torch.nn.functional.sigmoid(engine.state['ap_meter'].scores)
+    id_cat = list(cat_id.keys())
     result = []
-    for i in range(len(indec)):
+    for i in range(len(pb)):
+        temp = {"filename": engine.state['names'][i]}
         labels = []
-        labels_gt = []
-        for j in range(len(cat_id)):
-            if pb.numpy()[i][indec.numpy()[i][j]] > args.threshold:
-                labels.append(temp_cat[indec.numpy()[i][j]])
-            if val_dataset.targets[engine.state['names'][i].split(os.sep)[-1]][j] > 0:
-                labels_gt.append(temp_cat[j])
-        result.append([engine.state['names'][i].split(os.sep)[-1], "|".join(labels), "|".join(labels_gt)])
+        for j in range(args.num_classes):
+            if pb.numpy()[i][j] > args.threshold:
+                temp[id_cat[j]] = pb.numpy()[i][j]
+                labels.append(id_cat[j])
+            else:
+                temp[id_cat[j]] = -1
+        temp["labels_gt"] = "|".join(sorted(
+            [id_cat[idx] for idx, value in enumerate(engine.state['ap_meter'].targets[i]) if value == 1]
+        ))
+        temp["labels"] = "|".join(sorted(labels))
+        temp["pass"] = 1 if temp["labels_gt"] == temp["labels"] else 0
+        result.append(temp)
     result = pd.DataFrame(result)
-    result.rename(columns={0: "filename", 1: "labels", 2: "labels_gt"}, inplace=True)
-    return result, engine.state['map']
+    accuracy = result.groupby(by="labels_gt", as_index=False, sort=False)["labels_gt", "pass"].mean()
+    result["score"] = result.apply(
+        lambda x: cal_score(
+            x["labels_gt"], x["labels"], args.num_classes, args.way_num, cat_id
+        ), axis=1
+    )
+    accuracy.rename(columns={"labels_gt": "labels_gt", "pass": "accuracy"}, inplace=True)
+    return result, accuracy, engine.state['map']
 
 
 def create_loader_and_model(dataloader_class, model_class, args):
@@ -129,29 +141,48 @@ def create_loader_and_model(dataloader_class, model_class, args):
 def runner2(dataloader_class, model_class, args):
     val_loader, model = create_loader_and_model(dataloader_class, model_class, args)
     if args.model_name == 'asl':
-        result, map = asl_validate_multi(val_loader, model, args)
+        result, accuracy, map = asl_validate_multi(val_loader, model, args, 1)
     else:
         raise NotImplementedError("model {} is not implemented".format(args.model_name))
-    return result, map
+    return result, accuracy, map
 
 
-def runner(args):
+def runner(args, times=5):
     args.use_gpu = torch.cuda.is_available()
     model = get_model(args.model_name)
-    if args.model_name in ['msrn', 'mlgcn']:
-        result, map = runner1(args.dataloader, model, args)
-    elif args.model_name in ['asl']:
-        result, map = runner2(args.dataloader, model, args)
-    else:
-        raise NotImplementedError("model {} is not implemented".format(args.model_name))
+    data_root = args.data
+    res_root = args.res_path
+    for ca_type in args.covering_array_type:
+        args.way_num = int(ca_type.split("_")[-1])
+        for i in range(0, times):
+            args.data = os.path.join(data_root, f"{ca_type}_No{i+1}")
+            args.res_path = os.path.join(res_root, f"{ca_type}_No{i+1}")
+            if DO_COMPONENTS:
+                tasks = [False, True]
+            else:
+                tasks = [False]
+            for components in tasks:
+                print(f"covering array type: {ca_type}, No {i+1}, components: {components}")
+                if components:
+                    args.data = os.path.join(args.data, "components")
+                with torch.no_grad():
+                    if args.model_name in ['msrn', 'mlgcn']:
+                        result, accuracy, map = runner1(args.dataloader, model, args)
+                    elif args.model_name in ['asl']:
+                        result, accuracy, map = runner2(args.dataloader, model, args)
+                    else:
+                        raise NotImplementedError("model {} is not implemented".format(args.model_name))
 
-    result_file = os.path.join(
-        args.res_path,
-        r'result_{dataname}_{model_name}.xlsx'.format(
-            dataname=args.data_name, model_name=args.model_name
-        )
-    )
-    if not os.path.exists(os.path.dirname(result_file)):
-        os.makedirs(os.path.dirname(result_file))
-    result.to_excel(result_file, index=False)
-    print("save result to {}".format(result_file))
+                result_file = os.path.join(
+                    args.res_path,
+                    f"res_{args.data_name}_{args.model_name}_{ca_type}_No{i+1}{'_components' if components else ''}.csv"
+                )
+                accuracy_file = os.path.join(
+                    args.res_path,
+                    f"acc_{args.data_name}_{args.model_name}_{ca_type}_No{i+1}{'_components' if components else ''}.csv"
+                )
+                if not os.path.exists(os.path.dirname(result_file)):
+                    os.makedirs(os.path.dirname(result_file))
+                result.to_csv(result_file, index=False)
+                # accuracy.to_csv(accuracy_file, index=False)
+                print("save result to {}, {}".format(result_file, accuracy_file))

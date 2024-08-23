@@ -1,2 +1,5 @@
-checkpoints/
-pretrained/
+# checkpoints/
+# data/
+.idea/
+.vscode/
+**/__pycache__/
