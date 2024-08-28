@@ -94,24 +94,24 @@ model_info = [
 ]
 
 TASKS = [
-    # # voc msrn
-    # {
-    #     "task_name": "voc_msrn",
-    #     "args": {**data_info[0], **model_info[0]},
-    #     "dataloader": Voc2007Classification,
-    # },
-    # # voc mlgcn
-    # {
-    #     "task_name": "voc_mlgcn",
-    #     "args": {**data_info[0], **model_info[1]},
-    #     "dataloader": Voc2007Classification,
-    # },
-    # # voc asl
-    # {
-    #     "task_name": "voc_asl",
-    #     "args": {**data_info[0], **model_info[2]},
-    #     "dataloader": Voc2007Classification2,
-    # },
+    # voc msrn
+    {
+        "task_name": "voc_msrn",
+        "args": {**data_info[0], **model_info[0]},
+        "dataloader": Voc2007Classification,
+    },
+    # voc mlgcn
+    {
+        "task_name": "voc_mlgcn",
+        "args": {**data_info[0], **model_info[1]},
+        "dataloader": Voc2007Classification,
+    },
+    # voc asl
+    {
+        "task_name": "voc_asl",
+        "args": {**data_info[0], **model_info[2]},
+        "dataloader": Voc2007Classification2,
+    },
 
     # coco msrn
     {
