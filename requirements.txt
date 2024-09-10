@@ -1,6 +1,6 @@
 descartes==1.1.0
 imutils==0.5.4
-inplace-abn==1.1.0  # NOTE: WIN users: please install microsoft visual studio and add PATH_TO_BIN to system environment before installing inplace_abn
+inplace-abn==1.1.0  # NOTE: for Windows users: please install microsoft visual studio and add PATH_TO_BIN to system environment before installing inplace_abn; for Linux users: please download the source code from github (https://github.com/mapillary/inplace_abn/releases) and install inplace_abn from source code.
 matplotlib==3.3.4
 numpy==1.24.4
 opencv-python==4.4.0.46

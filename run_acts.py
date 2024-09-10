@@ -98,7 +98,7 @@ def runner(max_workers=10):
     for future in as_completed(res):
         n, k, tau, i, ca_size, ca_time = future.result()
         df.loc[len(df)] = [n, k, tau, i, ca_size, ca_time]
-        df.to_csv(os.path.join("tmp", "ca_acts_info_tmp.csv"), index=False)
+        df.to_csv("ca_acts_info_tmp.csv", index=False)
     df.sort_values(by=["n", "k", "tau", "i"], inplace=True)
     df.to_csv("ca_acts_info.csv", index=False)
 
@@ -108,7 +108,7 @@ if __name__ == "__main__":
     pd.set_option('display.max_rows', None)
     pd.set_option('max_colwidth', 1000)
     pd.set_option('display.width', 1000)
-    # generate_args()
+    generate_args()
     if not os.path.exists("args"):
         os.makedirs("args")
     if not os.path.exists("res"):

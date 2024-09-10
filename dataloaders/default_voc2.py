@@ -28,7 +28,7 @@ urls = {
 def read_image_label(file):
     print('[dataset] read ' + file)
     data = dict()
-    with open(file, 'r') as f:
+    with open(file.replace(' ', '').replace('tv', 'tvmonitor'), 'r') as f:
         for line in f:
             tmp = line.split(' ')
             name = tmp[0]

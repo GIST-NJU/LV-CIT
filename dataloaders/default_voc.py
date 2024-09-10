@@ -28,7 +28,7 @@ urls = {
 def read_image_label(file):
     print('[dataset] read ' + file)
     data = dict()
-    with open(file, 'r') as f:
+    with open(file.replace(' ', '').replace('tv', 'tvmonitor'), 'r') as f:
         for line in f:
             tmp = line.split(' ')
             name = tmp[0]
@@ -241,6 +241,10 @@ class Voc2007Classification(data.Dataset):
 
         self.classes = object_categories
         self.images = read_object_labels_csv(file_csv)
+        self.targets = {
+            name.split(os.sep)[-1]: self.target_transform(target)
+            if self.target_transform else target for (name, target) in self.images
+        }
 
         with open(inp_name, 'rb') as f:
             self.inp = pickle.load(f)

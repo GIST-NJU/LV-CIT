@@ -72,6 +72,16 @@ pip install -r requirements.txt
 conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.7 -c pytorch -c nvidia
 ```
 
+Note that direct installation of `inplace-abn` may fail due to the lack of dependencies. For Windows users, please install microsoft visual studio and add PATH_TO_BIN to system environment before installing inplace_abn; for Linux users, please download the [source code](https://github.com/mapillary/inplace_abn/releases) and install inplace_abn from source code (Note that the PyTorch and CUDA versions should be compatible).
+
+```
+git clone https://github.com/mapillary/inplace_abn.git
+cd inplace_abn
+python setup.py install
+cd scripts
+pip install -r requirements.txt
+```
+
 2. Download the checkpoints of the DNN models under test: [MSRN](https://github.com/chehao2628/MSRN), [ML-GCN](https://github.com/megvii-research/ML-GCN), and [ASL](https://github.com/Alibaba-MIIL/ASL). Then put them in the `checkpoints/<model_name>/` directory where `<model_name>` is `msrn`, `mlgcn`, or `asl`, and rename them to `<dataset>_checkpoints.pth.tar` where `<dataset>` is `voc` or `coco` (See more details in [checkpoints](./checkpoints/)). Addtionally, download [ResNet-101 pretrained model](https://github.com/chehao2628/MSRN?tab=readme-ov-file#2-download-resnet-101-pretrained-model) for MSRN, put the model in the `checkpoints/msrn/` directory, and rename it to `resnet101_for_msrn.pth.tar`.
 
 

@@ -149,7 +149,7 @@ def asl_validate_multi(val_loader, model, args, res_type=0):
     else:
         result = pd.DataFrame(result)
         result = result[["filename"] + list(sorted(val_loader.dataset.get_cat2id().keys())) + ["labels_gt", "labels", "pass"]]
-        accuracy = result.groupby(by="labels_gt", as_index=False, sort=False)["labels_gt", "pass"].mean()
+        accuracy = result.groupby(by="labels_gt", as_index=False, sort=False)[["labels_gt", "pass"]].mean()
         result["score"] = result.apply(
             lambda x: cal_score(
                 x["labels_gt"], x["labels"],
