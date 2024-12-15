@@ -1,6 +1,7 @@
 # A Combinatorial Interaction Testing Method for Multi-Label Image Classifier
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.13368486.svg)](https://doi.org/10.5281/zenodo.13368486)
+[![DOI](https://zenodo.org/badge/DOI/10.1109/ISSRE62328.2024.00051.svg)](https://doi.org/10.1109/ISSRE62328.2024.00051)
 
 This repository contains the source code of **LV-CIT**, a black-box testing method that applies Combinatorial Interaction Testing (CIT) to systematically test the ability of classifiers to handle such correlations. It also contains the replication package to reproduce the results reported in the ISSRE 2024 paper.
 

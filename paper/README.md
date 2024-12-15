@@ -4,11 +4,12 @@ If you find this paper helpful for your research, we would appreciate it if you 
 
 ```
 @inproceedings{wang2024lvcit,
-  title     = {A Combinatorial Interaction Testing Method for Multi{-}Label Image Classifier},
-  author    = {Wang, Peng and Hu, Shengyou and Wu, Huayao and Niu, Xintao and Nie, Changhai and Chen, Lin},
-  booktitle = {2024 IEEE 35th International Symposium on Software Reliability Engineering},
-  pages     = {463--474},
-  year      = {2024},
+  title        = {A Combinatorial Interaction Testing Method for Multi{-}Label Image Classifier},
+  author       = {Wang, Peng and Hu, Shengyou and Wu, Huayao and Niu, Xintao and Nie, Changhai and Chen, Lin},
+  booktitle    = {2024 IEEE 35th International Symposium on Software Reliability Engineering (ISSRE)},
+  pages        = {463--474},
+  year         = {2024},
+  organization = {IEEE}
 }
 ```
 
